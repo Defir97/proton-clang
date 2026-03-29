@@ -48,7 +48,7 @@ jobs:
         tar -czvf proton-clang-13-aarch64.tar.gz install/
 
     - name: Upload ke Artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: proton-clang-bin
         path: proton-clang-13-aarch64.tar.gz
