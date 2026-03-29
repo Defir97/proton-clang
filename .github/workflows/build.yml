@@ -23,7 +23,7 @@ jobs:
         # Tambahkan folder buat hasil install
         mkdir -p ../install
 
-    - name: Konfigurasi CMake
+    - name: Konfigurasi CMake (With Fixes)
       run: |
         cd llvm-project
         mkdir build && cd build
@@ -31,12 +31,15 @@ jobs:
           -DCMAKE_BUILD_TYPE=Release \
           -DLLVM_ENABLE_PROJECTS="clang;lld;polly" \
           -DLLVM_TARGETS_TO_BUILD="AArch64;ARM" \
-          -DLLVM_ENABLE_RUNTIMES="libcxx;libcxxabi;libunwind" \
-          -DCLANG_VENDOR="Proton-AArch64" \
+          -DCLANG_VENDOR="Proton-AArch64-Custom" \
           -DCMAKE_INSTALL_PREFIX=../../install \
           -DLLVM_INCLUDE_BENCHMARKS=OFF \
           -DLLVM_ENABLE_TERMINFO=OFF \
-          -DLLVM_STATIC_LINK_CXX_STDLIB=ON
+          -DLLVM_STATIC_LINK_CXX_STDLIB=ON \
+          -DCMAKE_C_FLAGS="-Wno-unused-but-set-variable -Wno-error" \
+          -DCMAKE_CXX_FLAGS="-Wno-unused-but-set-variable -Wno-error" \
+          -DLLVM_BUILD_LLVM_DYLIB=ON \
+          -DLLVM_LINK_LLVM_DYLIB=ON
 
     - name: Mulai Kompilasi
       run: |
@@ -52,3 +55,12 @@ jobs:
       with:
         name: proton-clang-bin
         path: proton-clang-13-aarch64.tar.gz
+
+    - name: Create Release & Upload
+      uses: softprops/action-gh-release@v2
+      with:
+        tag_name: ${{ env.TAG_NAME }}
+        name: Proton-Clang 13 Ultimate Build ${{ env.TAG_NAME }}
+        files: proton-clang-13-ultimate.tar.gz
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
