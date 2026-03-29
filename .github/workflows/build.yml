@@ -18,7 +18,7 @@ jobs:
 
     - name: Clone LLVM Project
       run: |
-        git clone https://github.com/llvm/llvm-project.git --depth=1 -b llvmorg-13.0.1
+        git clone https://github.com/llvm/llvm-project.git --depth=1 -b llvmorg-13.0.0
         cd llvm-project
         # Tambahkan folder buat hasil install
         mkdir -p ../install
