@@ -1,0 +1,80 @@
+name: Build Proton-Clang 13 Native AArch64
+
+on:
+  workflow_dispatch: 
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Dependencies & Cross-Compiler
+      run: |
+        sudo apt update
+        sudo apt install -y cmake ninja-build build-essential python3 git \
+          gcc-aarch64-linux-gnu g++-aarch64-linux-gnu libncurses5-dev wget
+
+    - name: Clone LLVM Project
+      run: |
+        git clone https://github.com/llvm/llvm-project.git llvm-project
+        cd llvm-project
+        git fetch --depth 1 origin dff47d944dc626eb2d1b846710a18cad6cc1fb22
+        git checkout FETCH_HEAD
+        mkdir -p ../install
+
+    - name: Build Native TableGen
+      run: |
+        cd llvm-project
+        mkdir build-native && cd build-native
+        cmake -G Ninja ../llvm \
+          -DCMAKE_BUILD_TYPE=Release \
+          -DLLVM_TARGETS_TO_BUILD="AArch64" \
+          -DLLVM_ENABLE_PROJECTS="clang"
+        ninja llvm-tblgen clang-tblgen
+
+    - name: Konfigurasi Cross-Compile (Cetak Binary ARM64)
+      run: |
+        cd llvm-project
+        mkdir build-cross && cd build-cross
+        cmake -G Ninja ../llvm \
+          -DCMAKE_BUILD_TYPE=Release \
+          -DLLVM_ENABLE_PROJECTS="clang;lld;polly" \
+          -DLLVM_TARGETS_TO_BUILD="AArch64;ARM" \
+          -DCMAKE_SYSTEM_NAME=Linux \
+          -DCMAKE_SYSTEM_PROCESSOR=aarch64 \
+          -DCMAKE_C_COMPILER=aarch64-linux-gnu-gcc \
+          -DCMAKE_CXX_COMPILER=aarch64-linux-gnu-g++ \
+          -DLLVM_HOST_TRIPLE=aarch64-unknown-linux-gnu \
+          -DCLANG_VENDOR="Proton-Clang-AArch64" \
+          -DCMAKE_INSTALL_PREFIX=../../install \
+          -DLLVM_TABLEGEN=$(pwd)/../build-native/bin/llvm-tblgen \
+          -DCLANG_TABLEGEN=$(pwd)/../build-native/bin/clang-tblgen \
+          -DLLVM_INCLUDE_BENCHMARKS=OFF \
+          -DLLVM_ENABLE_TERMINFO=OFF \
+          -DLLVM_ENABLE_BINDINGS=OFF \
+          -DLLVM_STATIC_LINK_CXX_STDLIB=ON \
+          -DCMAKE_C_FLAGS="-O3 -Wno-unused-but-set-variable -Wno-error" \
+          -DCMAKE_CXX_FLAGS="-O3 -Wno-unused-but-set-variable -Wno-error" 
+
+    - name: Kompilasi LLVM (AArch64 Native)
+      run: |
+        cd llvm-project/build-cross
+        ninja -j2 install
+
+    - name: Packing
+      run: |
+        tar -czvf proton-clang-13-aarch64.tar.gz install/
+        
+    - name: Create Release & Upload
+      uses: softprops/action-gh-release@v2
+      with:
+        tag_name: b4fd512-${{ github.run_id }}
+        name: Proton-Clang 13 (Commit b4fd512)
+        files: proton-clang-13-aarch64.tar.gz
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
