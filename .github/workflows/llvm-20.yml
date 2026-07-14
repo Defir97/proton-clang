@@ -1,4 +1,4 @@
-name: Build Proton-Clang 13 Native AArch64
+name: Build Proton-Clang 20.0.0 Native AArch64
 
 on:
   workflow_dispatch: 
@@ -68,13 +68,13 @@ jobs:
 
     - name: Packing
       run: |
-        tar -czvf proton-clang-13-aarch64.tar.gz install/
+        tar -czvf proton-clang-20-aarch64.tar.gz install/
         
     - name: Create Release & Upload
       uses: softprops/action-gh-release@v2
       with:
-        tag_name: b4fd512-${{ github.run_id }}
-        name: Proton-Clang 13 (Commit b4fd512)
-        files: proton-clang-13-aarch64.tar.gz
+        tag_name: llvm-${{ github.run_id }}
+        name: Proton-Clang 20 (Commit dff47d9)
+        files: proton-clang-20-aarch64.tar.gz
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
